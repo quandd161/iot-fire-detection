@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Detection System - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔥 Gas Detection System</h1>
+            <div class="connection-status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Đang kết nối...</span>
+            </div>
+        </header>
+
+        <!-- Sensor Panel -->
+        <section class="sensor-panel">
+            <div class="sensor-card gas-card">
+                <div class="sensor-icon">💨</div>
+                <h3>Nồng độ Gas (MQ2)</h3>
+                <div class="sensor-value" id="gasValue">
+                    <span class="value">0</span>
+                    <span class="unit">ppm</span>
+                </div>
+                <div class="sensor-status" id="gasStatus">Bình thường</div>
+            </div>
+
+            <div class="sensor-card fire-card">
+                <div class="sensor-icon">🔥</div>
+                <h3>Cảm biến lửa</h3>
+                <div class="sensor-value" id="fireValue">
+                    <span class="value">Bình thường</span>
+                </div>
+                <div class="sensor-status" id="fireStatus">An toàn</div>
+            </div>
+
+            <div class="sensor-card threshold-card">
+                <div class="sensor-icon">⚠️</div>
+                <h3>Ngưỡng cảnh báo</h3>
+                <div class="sensor-value" id="thresholdValue">
+                    <span class="value">4000</span>
+                    <span class="unit">ppm</span>
+                </div>
+                <div class="threshold-control">
+                    <input type="range" id="thresholdSlider" min="200" max="9999" step="50" value="4000">
+                    <button class="btn btn-primary" id="setThresholdBtn">Đặt ngưỡng</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Control Panel -->
+        <section class="control-panel">
+            <h2>🎛️ Bảng điều khiển</h2>
+
+            <div class="mode-switch">
+                <label class="switch-label">Chế độ hoạt động:</label>
+                <button class="mode-btn" id="modeBtn">
+                    <span class="mode-text">AUTO</span>
+                </button>
+            </div>
+
+            <div class="controls-grid">
+                <!-- Relay 1 -->
+                <div class="control-item">
+                    <div class="control-header">
+                        <span class="control-icon">🔌</span>
+                        <h4>Relay 1</h4>
+                    </div>
+                    <button class="control-btn" id="relay1Btn" data-state="off">
+                        <span class="btn-text">OFF</span>
+                    </button>
+                </div>
+
+                <!-- Relay 2 -->
+                <div class="control-item">
+                    <div class="control-header">
+                        <span class="control-icon">🔌</span>
+                        <h4>Relay 2</h4>
+                    </div>
+                    <button class="control-btn" id="relay2Btn" data-state="off">
+                        <span class="btn-text">OFF</span>
+                    </button>
+                </div>
+
+                <!-- Window -->
+                <div class="control-item">
+                    <div class="control-header">
+                        <span class="control-icon">🪟</span>
+                        <h4>Cửa sổ</h4>
+                    </div>
+                    <button class="control-btn" id="windowBtn" data-state="off">
+                        <span class="btn-text">ĐÓNG</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chart Section -->
+        <section class="chart-panel">
+            <h2>📊 Lịch sử dữ liệu (30 phút gần nhất)</h2>
+            <div class="chart-container">
+                <canvas id="gasChart"></canvas>
+            </div>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-color" style="background: #4CAF50;"></span> MQ2
+                    (ppm)</span>
+                <span class="legend-item"><span class="legend-color" style="background: #FF9800;"></span> Ngưỡng</span>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section class="stats-panel">
+            <h2>📈 Thống kê</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-label">Trung bình</div>
+                    <div class="stat-value" id="avgValue">0</div>
+                    <div class="stat-unit">ppm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⬆️</div>
+                    <div class="stat-label">Cao nhất</div>
+                    <div class="stat-value" id="maxValue">0</div>
+                    <div class="stat-unit">ppm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⬇️</div>
+                    <div class="stat-label">Thấp nhất</div>
+                    <div class="stat-value" id="minValue">0</div>
+                    <div class="stat-unit">ppm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-label">Vượt ngưỡng</div>
+                    <div class="stat-value" id="alertCount">0</div>
+                    <div class="stat-unit">lần</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notifications -->
+        <section class="notifications-panel">
+            <h2>🔔 Thông báo</h2>
+            <div class="notifications-list" id="notificationsList">
+                <div class="no-notifications">Chưa có thông báo nào</div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Last update: <span id="lastUpdate">--</span></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
