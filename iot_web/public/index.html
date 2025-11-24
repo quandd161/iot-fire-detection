@@ -15,150 +15,232 @@
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>🔥 Gas Detection System</h1>
-            <div class="connection-status">
-                <span class="status-indicator" id="statusIndicator"></span>
-                <span id="statusText">Đang kết nối...</span>
+            <div class="header-left">
+                <h1>🔥 Gas Detection System</h1>
+            </div>
+            <div class="header-right">
+                <div class="connection-status">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Đang kết nối...</span>
+                </div>
+                <div class="mode-switch-header">
+                    <span class="mode-label">Chế độ:</span>
+                    <button class="mode-btn" id="modeBtn">
+                        <span class="mode-text">AUTO</span>
+                    </button>
+                </div>
             </div>
         </header>
 
-        <!-- Sensor Panel -->
-        <section class="sensor-panel">
-            <div class="sensor-card gas-card">
-                <div class="sensor-icon">💨</div>
-                <h3>Nồng độ Gas (MQ2)</h3>
-                <div class="sensor-value" id="gasValue">
-                    <span class="value">0</span>
-                    <span class="unit">ppm</span>
-                </div>
-                <div class="sensor-status" id="gasStatus">Bình thường</div>
-            </div>
-
-            <div class="sensor-card fire-card">
-                <div class="sensor-icon">🔥</div>
-                <h3>Cảm biến lửa</h3>
-                <div class="sensor-value" id="fireValue">
-                    <span class="value">Bình thường</span>
-                </div>
-                <div class="sensor-status" id="fireStatus">An toàn</div>
-            </div>
-
-            <div class="sensor-card threshold-card">
-                <div class="sensor-icon">⚠️</div>
-                <h3>Ngưỡng cảnh báo</h3>
-                <div class="sensor-value" id="thresholdValue">
-                    <span class="value">4000</span>
-                    <span class="unit">ppm</span>
-                </div>
-                <div class="threshold-control">
-                    <input type="range" id="thresholdSlider" min="200" max="9999" step="50" value="4000">
-                    <button class="btn btn-primary" id="setThresholdBtn">Đặt ngưỡng</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Control Panel -->
-        <section class="control-panel">
-            <h2>🎛️ Bảng điều khiển</h2>
-
-            <div class="mode-switch">
-                <label class="switch-label">Chế độ hoạt động:</label>
-                <button class="mode-btn" id="modeBtn">
-                    <span class="mode-text">AUTO</span>
-                </button>
-            </div>
-
-            <div class="controls-grid">
-                <!-- Relay 1 -->
-                <div class="control-item">
-                    <div class="control-header">
-                        <span class="control-icon">🔌</span>
-                        <h4>Relay 1</h4>
+        <!-- Main Grid: 2 Columns -->
+        <div class="main-grid">
+            <!-- Left Column: Monitoring -->
+            <div class="left-col">
+                <!-- Sensors Row -->
+                <section class="sensors-row">
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <span class="sensor-icon">💨</span>
+                            <h3>Nồng độ Gas</h3>
+                        </div>
+                        <div class="sensor-body">
+                            <div class="sensor-value">
+                                <span class="value" id="gasValue">0</span>
+                                <span class="unit">ppm</span>
+                            </div>
+                            <div class="sensor-status" id="gasStatus">Bình thường</div>
+                        </div>
                     </div>
-                    <button class="control-btn" id="relay1Btn" data-state="off">
-                        <span class="btn-text">OFF</span>
-                    </button>
-                </div>
 
-                <!-- Relay 2 -->
-                <div class="control-item">
-                    <div class="control-header">
-                        <span class="control-icon">🔌</span>
-                        <h4>Relay 2</h4>
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <span class="sensor-icon">🔥</span>
+                            <h3>Cảm biến Lửa</h3>
+                        </div>
+                        <div class="sensor-body">
+                            <div class="sensor-value">
+                                <span class="value" id="fireValue">Bình thường</span>
+                            </div>
+                            <div class="sensor-status" id="fireStatus">An toàn</div>
+                        </div>
                     </div>
-                    <button class="control-btn" id="relay2Btn" data-state="off">
-                        <span class="btn-text">OFF</span>
-                    </button>
-                </div>
 
-                <!-- Window -->
-                <div class="control-item">
-                    <div class="control-header">
-                        <span class="control-icon">🪟</span>
-                        <h4>Cửa sổ</h4>
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <span class="sensor-icon">⚠️</span>
+                            <h3>Ngưỡng cảnh báo</h3>
+                        </div>
+                        <div class="sensor-body">
+                            <div class="sensor-value">
+                                <span class="value" id="thresholdDisplay">4000</span>
+                                <span class="unit">ppm</span>
+                            </div>
+                            <input type="range" id="thresholdSlider" min="200" max="9999" step="50" value="4000"
+                                class="threshold-slider">
+                        </div>
                     </div>
-                    <button class="control-btn" id="windowBtn" data-state="off">
-                        <span class="btn-text">ĐÓNG</span>
-                    </button>
-                </div>
-            </div>
-        </section>
+                </section>
 
-        <!-- Chart Section -->
-        <section class="chart-panel">
-            <h2>📊 Lịch sử dữ liệu (30 phút gần nhất)</h2>
-            <div class="chart-container">
-                <canvas id="gasChart"></canvas>
-            </div>
-            <div class="chart-legend">
-                <span class="legend-item"><span class="legend-color" style="background: #4CAF50;"></span> MQ2
-                    (ppm)</span>
-                <span class="legend-item"><span class="legend-color" style="background: #FF9800;"></span> Ngưỡng</span>
-            </div>
-        </section>
+                <!-- Chart Section -->
+                <section class="chart-section">
+                    <div class="section-header">
+                        <h2>📊 Biểu đồ theo dõi</h2>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="dot" style="background: #0EA5E9"></span> Gas (ppm)
+                            </span>
+                            <span class="legend-item">
+                                <span class="dot" style="background: #F97316"></span> Ngưỡng
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="gasChart"></canvas>
+                    </div>
+                </section>
 
-        <!-- Statistics -->
-        <section class="stats-panel">
-            <h2>📈 Thống kê</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-label">Trung bình</div>
-                    <div class="stat-value" id="avgValue">0</div>
-                    <div class="stat-unit">ppm</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⬆️</div>
-                    <div class="stat-label">Cao nhất</div>
-                    <div class="stat-value" id="maxValue">0</div>
-                    <div class="stat-unit">ppm</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⬇️</div>
-                    <div class="stat-label">Thấp nhất</div>
-                    <div class="stat-value" id="minValue">0</div>
-                    <div class="stat-unit">ppm</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⚠️</div>
-                    <div class="stat-label">Vượt ngưỡng</div>
-                    <div class="stat-value" id="alertCount">0</div>
-                    <div class="stat-unit">lần</div>
-                </div>
+                <!-- Statistics -->
+                <section class="stats-section">
+                    <h2>📈 Thống kê (30 phút)</h2>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Trung bình</div>
+                                <div class="stat-value" id="avgValue">0</div>
+                                <div class="stat-unit">ppm</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">⬆️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Cao nhất</div>
+                                <div class="stat-value" id="maxValue">0</div>
+                                <div class="stat-unit">ppm</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">⬇️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Thấp nhất</div>
+                                <div class="stat-value" id="minValue">0</div>
+                                <div class="stat-unit">ppm</div>
+                            </div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Vượt ngưỡng</div>
+                                <div class="stat-value" id="alertCount">0</div>
+                                <div class="stat-unit">lần</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </section>
 
-        <!-- Notifications -->
-        <section class="notifications-panel">
-            <h2>🔔 Thông báo</h2>
-            <div class="notifications-list" id="notificationsList">
-                <div class="no-notifications">Chưa có thông báo nào</div>
+            <!-- Right Column: Controls & Notifications -->
+            <div class="right-col">
+                <!-- Controls Section -->
+                <section class="controls-section">
+                    <h2>🎛️ Điều khiển thiết bị</h2>
+
+                    <div class="control-group">
+                        <div class="control-item">
+                            <div class="control-info">
+                                <span class="control-icon">💨</span>
+                                <div class="control-text">
+                                    <h4>Quạt hút</h4>
+                                    <p>Làm sạch không khí</p>
+                                </div>
+                            </div>
+                            <button class="control-toggle" id="relay1Btn" data-state="off">
+                                <span class="toggle-text">TẮT</span>
+                            </button>
+                        </div>
+
+                        <div class="control-item">
+                            <div class="control-info">
+                                <span class="control-icon">💧</span>
+                                <div class="control-text">
+                                    <h4>Máy bơm</h4>
+                                    <p>Hệ thống chữa cháy</p>
+                                </div>
+                            </div>
+                            <button class="control-toggle" id="relay2Btn" data-state="off">
+                                <span class="toggle-text">TẮT</span>
+                            </button>
+                        </div>
+
+                        <div class="control-item">
+                            <div class="control-info">
+                                <span class="control-icon">🪟</span>
+                                <div class="control-text">
+                                    <h4>Cửa sổ</h4>
+                                    <p>Thông gió tự động</p>
+                                </div>
+                            </div>
+                            <button class="control-toggle" id="windowBtn" data-state="off">
+                                <span class="toggle-text">ĐÓNG</span>
+                            </button>
+                        </div>
+
+                        <div class="control-item">
+                            <div class="control-info">
+                                <span class="control-icon">🔊</span>
+                                <div class="control-text">
+                                    <h4>Còi báo động</h4>
+                                    <p>Cảnh báo âm thanh</p>
+                                </div>
+                            </div>
+                            <button class="control-toggle" id="buzzerBtn" data-state="off">
+                                <span class="toggle-text">TẮT</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Threshold Settings -->
+                <section class="settings-section">
+                    <h2>⚙️ Cài đặt ngưỡng</h2>
+                    <div class="settings-box">
+                        <div class="setting-display">
+                            <span class="setting-label">Ngưỡng hiện tại</span>
+                            <span class="setting-value" id="thresholdValue">4000 ppm</span>
+                        </div>
+                        <button class="btn-primary btn-block" id="setThresholdBtn">
+                            ✓ Áp dụng ngưỡng mới
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Notifications -->
+                <section class="notifications-section">
+                    <div class="section-header">
+                        <h2>🔔 Thông báo</h2>
+                        <button class="btn-clear" id="clearNotifications">Xóa tất cả</button>
+                    </div>
+                    <div class="notifications-wrapper" id="notificationsList">
+                        <div class="no-notifications">
+                            <div class="empty-state">
+                                <span class="empty-icon">🔕</span>
+                                <p>Chưa có thông báo nào</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </section>
+        </div>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Last update: <span id="lastUpdate">--</span></p>
+            <div class="footer-info">
+                <span>© 2025 Gas Detection System - IoT Dashboard</span>
+            </div>
+            <div class="footer-time">
+                <span>Cập nhật lần cuối: </span>
+                <span id="lastUpdate">--</span>
+            </div>
         </footer>
     </div>
 

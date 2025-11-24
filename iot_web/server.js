@@ -28,6 +28,7 @@ let sensorData = {
     relay1: false,
     relay2: false,
     window: false,
+    buzzer: false,
     mode: 'AUTO',
     threshold: 4000,
     lastUpdate: new Date(),
@@ -92,6 +93,9 @@ mqttClient.on('message', (topic, message) => {
     }
     else if (topic === 'gas/status/window') {
         sensorData.window = value === '1';
+    }
+    else if (topic === 'gas/status/buzzer') {
+        sensorData.buzzer = value === '1';
     }
     else if (topic === 'gas/status/mode') {
         sensorData.mode = value === '1' ? 'AUTO' : 'MANUAL';
@@ -224,6 +228,20 @@ app.post('/api/control/window', (req, res) => {
             return res.status(500).json({ success: false, error: err.message });
         }
         console.log(`🪟 Window set to ${state ? 'OPEN' : 'CLOSED'}`);
+        res.json({ success: true, state });
+    });
+});
+
+// Control Buzzer
+app.post('/api/control/buzzer', (req, res) => {
+    const { state } = req.body;
+    const value = state ? '1' : '0';
+    
+    mqttClient.publish('gas/control/buzzer', value, { qos: 1 }, (err) => {
+        if (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+        console.log(`🔊 Buzzer set to ${state ? 'ON' : 'OFF'}`);
         res.json({ success: true, state });
     });
 });

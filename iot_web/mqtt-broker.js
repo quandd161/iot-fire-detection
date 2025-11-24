@@ -10,7 +10,7 @@ server.listen(port, function () {
     console.log('🚀 Local MQTT Broker Started');
     console.log('🚀 ========================================');
     console.log(`📡 MQTT Broker running on port ${port}`);
-    console.log(`📍 Connect to: mqtt://192.168.1.19:${port}`);
+    console.log(`📍 Connect to: mqtt://192.168.1.13:${port}`);
     console.log('🚀 ========================================\n');
 });
 
