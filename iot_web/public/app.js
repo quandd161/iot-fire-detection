@@ -274,7 +274,7 @@ function updateUI() {
         threshold: currentData.threshold,
         timestamp: Date.now()
     });
-    
+
     // Keep only last MAX_DATA_POINTS
     if (allDataPoints.length > MAX_DATA_POINTS) {
         allDataPoints.shift();
@@ -286,7 +286,7 @@ function updateUI() {
         updateChartData();
         lastChartUpdate = now;
     }
-    
+
     // Always update statistics (based on all data points)
     updateStatistics();
 
@@ -574,10 +574,10 @@ function updateChartData() {
 
 function updateStatistics() {
     console.log('📊 Updating statistics, total data points:', allDataPoints.length, 'chart points:', chartData.mq2Values.length);
-    
+
     // Use all data points for accurate statistics
     const dataSource = allDataPoints.length > 0 ? allDataPoints : [];
-    
+
     if (dataSource.length === 0) {
         // If no data yet, show current value
         const currentValue = currentData.mq2 || 0;

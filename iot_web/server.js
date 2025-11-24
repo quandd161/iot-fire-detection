@@ -42,14 +42,14 @@ let notifications = [];
 mqttClient.on('connect', () => {
     console.log('✅ Connected to MQTT Broker');
     sensorData.connected = true;
-    
+
     // Subscribe topics
     const topics = [
         'gas/sensor/#',
         'gas/status/#',
         'gas/notification'
     ];
-    
+
     topics.forEach(topic => {
         mqttClient.subscribe(topic, (err) => {
             if (!err) {
@@ -77,7 +77,7 @@ mqttClient.on('error', (error) => {
 mqttClient.on('message', (topic, message) => {
     const value = message.toString();
     console.log(`📨 [MQTT] ${topic}: ${value}`);
-    
+
     // Update data
     if (topic === 'gas/sensor/mq2') {
         sensorData.mq2 = parseInt(value) || 0;
@@ -122,9 +122,9 @@ mqttClient.on('message', (topic, message) => {
         }
         return; // Không update lastUpdate cho notification
     }
-    
+
     sensorData.lastUpdate = new Date();
-    
+
     // Broadcast to all WebSocket clients
     broadcastToClients({
         type: 'data',
@@ -135,13 +135,13 @@ mqttClient.on('message', (topic, message) => {
 // WebSocket Connection
 wss.on('connection', (ws) => {
     console.log('🔌 New WebSocket client connected');
-    
+
     // Send current data immediately
     ws.send(JSON.stringify({
         type: 'data',
         data: sensorData
     }));
-    
+
     // Send recent notifications
     if (notifications.length > 0) {
         ws.send(JSON.stringify({
@@ -149,11 +149,11 @@ wss.on('connection', (ws) => {
             data: notifications.slice(0, 10)
         }));
     }
-    
+
     ws.on('close', () => {
         console.log('🔌 WebSocket client disconnected');
     });
-    
+
     ws.on('error', (error) => {
         console.error('WebSocket error:', error);
     });
@@ -194,7 +194,7 @@ app.get('/api/notifications', (req, res) => {
 app.post('/api/control/relay1', (req, res) => {
     const { state } = req.body;
     const value = state ? '1' : '0';
-    
+
     mqttClient.publish('gas/control/relay1', value, { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
@@ -208,7 +208,7 @@ app.post('/api/control/relay1', (req, res) => {
 app.post('/api/control/relay2', (req, res) => {
     const { state } = req.body;
     const value = state ? '1' : '0';
-    
+
     mqttClient.publish('gas/control/relay2', value, { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
@@ -222,7 +222,7 @@ app.post('/api/control/relay2', (req, res) => {
 app.post('/api/control/window', (req, res) => {
     const { state } = req.body;
     const value = state ? '1' : '0';
-    
+
     mqttClient.publish('gas/control/window', value, { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
@@ -236,7 +236,7 @@ app.post('/api/control/window', (req, res) => {
 app.post('/api/control/buzzer', (req, res) => {
     const { state } = req.body;
     const value = state ? '1' : '0';
-    
+
     mqttClient.publish('gas/control/buzzer', value, { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
@@ -250,7 +250,7 @@ app.post('/api/control/buzzer', (req, res) => {
 app.post('/api/control/mode', (req, res) => {
     const { mode } = req.body;
     const value = mode === 'AUTO' ? '1' : '0';
-    
+
     mqttClient.publish('gas/control/mode', value, { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
@@ -263,14 +263,14 @@ app.post('/api/control/mode', (req, res) => {
 // Set Threshold
 app.post('/api/control/threshold', (req, res) => {
     const { threshold } = req.body;
-    
+
     if (threshold < 200 || threshold > 9999) {
-        return res.status(400).json({ 
-            success: false, 
-            error: 'Threshold must be between 200 and 9999' 
+        return res.status(400).json({
+            success: false,
+            error: 'Threshold must be between 200 and 9999'
         });
     }
-    
+
     mqttClient.publish('gas/control/threshold', threshold.toString(), { qos: 1 }, (err) => {
         if (err) {
             return res.status(500).json({ success: false, error: err.message });
