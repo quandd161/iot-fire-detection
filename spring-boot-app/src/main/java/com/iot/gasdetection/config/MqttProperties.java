@@ -8,24 +8,28 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "mqtt")
 public class MqttProperties {
+
     private Broker broker = new Broker();
     private Client client = new Client();
     private Topics topics = new Topics();
-    
+
     @Data
     public static class Broker {
+
         private String url;
         private String username;
         private String password;
     }
-    
+
     @Data
     public static class Client {
+
         private String id;
     }
-    
+
     @Data
     public static class Topics {
+
         private String sensor;
         private String status;
         private String notification;

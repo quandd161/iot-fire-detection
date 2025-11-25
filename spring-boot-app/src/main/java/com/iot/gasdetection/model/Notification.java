@@ -11,13 +11,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Notification {
+
     private String type;
     private String message;
     private long timestamp;
-    
+
     @JsonProperty("receivedAt")
     private LocalDateTime receivedAt;
-    
+
     public Notification(String type, String message, long timestamp) {
         this.type = type;
         this.message = message;

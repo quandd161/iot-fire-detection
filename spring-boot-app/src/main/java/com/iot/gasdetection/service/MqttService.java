@@ -21,70 +21,70 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class MqttService {
-    
+
     private final MqttProperties mqttProperties;
     private final WebSocketService webSocketService;
     private final ObjectMapper objectMapper;
-    
+
     private MqttClient mqttClient;
     private final SensorData sensorData = new SensorData();
     private final List<Notification> notifications = new ArrayList<>();
     private static final int MAX_NOTIFICATIONS = 100;
-    
+
     @PostConstruct
     public void connect() {
         try {
             String clientId = mqttProperties.getClient().getId() + "-" + UUID.randomUUID().toString();
             mqttClient = new MqttClient(mqttProperties.getBroker().getUrl(), clientId);
-            
+
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
             options.setConnectionTimeout(30);
             options.setKeepAliveInterval(60);
-            
+
             if (mqttProperties.getBroker().getUsername() != null && !mqttProperties.getBroker().getUsername().isEmpty()) {
                 options.setUserName(mqttProperties.getBroker().getUsername());
                 options.setPassword(mqttProperties.getBroker().getPassword().toCharArray());
             }
-            
+
             mqttClient.setCallback(new MqttCallback() {
                 @Override
                 public void connectionLost(Throwable cause) {
                     log.error("❌ MQTT Connection lost", cause);
                     sensorData.setConnected(false);
                 }
-                
+
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
                     handleMessage(topic, new String(message.getPayload()));
                 }
-                
+
                 @Override
                 public void deliveryComplete(IMqttDeliveryToken token) {
                     // Not used
                 }
             });
-            
+
             mqttClient.connect(options);
             log.info("✅ Connected to MQTT Broker: {}", mqttProperties.getBroker().getUrl());
             sensorData.setConnected(true);
-            
+
             // Subscribe to topics
             mqttClient.subscribe(mqttProperties.getTopics().getSensor(), 1);
             mqttClient.subscribe(mqttProperties.getTopics().getStatus(), 1);
             mqttClient.subscribe(mqttProperties.getTopics().getNotification(), 1);
-            
+
             log.info("📡 Subscribed to topics: {}, {}, {}",
                     mqttProperties.getTopics().getSensor(),
                     mqttProperties.getTopics().getStatus(),
                     mqttProperties.getTopics().getNotification());
-            
+
         } catch (MqttException e) {
             log.error("❌ Failed to connect to MQTT Broker", e);
         }
     }
-    
+
     @PreDestroy
     public void disconnect() {
         try {
@@ -97,10 +97,10 @@ public class MqttService {
             log.error("Error disconnecting MQTT client", e);
         }
     }
-    
+
     private void handleMessage(String topic, String value) {
         log.debug("📨 [MQTT] {}: {}", topic, value);
-        
+
         try {
             if (topic.equals("gas/sensor/mq2")) {
                 sensorData.setMq2(Integer.parseInt(value));
@@ -122,39 +122,39 @@ public class MqttService {
                 handleNotification(value);
                 return; // Don't update lastUpdate for notifications
             }
-            
+
             sensorData.setLastUpdate(LocalDateTime.now());
-            
+
             // Broadcast to WebSocket clients
             WebSocketMessage wsMessage = new WebSocketMessage("data", sensorData);
             webSocketService.broadcast(wsMessage);
-            
+
         } catch (Exception e) {
             log.error("Error handling MQTT message", e);
         }
     }
-    
+
     private void handleNotification(String value) {
         try {
             Notification notification = objectMapper.readValue(value, Notification.class);
             notification.setReceivedAt(LocalDateTime.now());
-            
+
             notifications.add(0, notification);
-            
+
             // Keep max notifications
             if (notifications.size() > MAX_NOTIFICATIONS) {
                 notifications.subList(MAX_NOTIFICATIONS, notifications.size()).clear();
             }
-            
+
             // Broadcast notification
             WebSocketMessage wsMessage = new WebSocketMessage("notification", notification);
             webSocketService.broadcast(wsMessage);
-            
+
         } catch (Exception e) {
             log.error("Error parsing notification", e);
         }
     }
-    
+
     public void publish(String topic, String message) {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
@@ -167,11 +167,11 @@ public class MqttService {
             log.error("Error publishing MQTT message", e);
         }
     }
-    
+
     public SensorData getSensorData() {
         return sensorData;
     }
-    
+
     public List<Notification> getNotifications() {
         return notifications;
     }

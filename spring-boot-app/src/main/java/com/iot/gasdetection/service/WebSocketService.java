@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class WebSocketService {
-    
+
     private final SensorWebSocketHandler webSocketHandler;
-    
+
     public void broadcast(WebSocketMessage message) {
         webSocketHandler.broadcast(message);
     }
-    
+
     public int getActiveConnections() {
         return webSocketHandler.getActiveConnectionCount();
     }

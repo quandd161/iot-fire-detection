@@ -16,14 +16,14 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class WebSocketEventListener {
-    
+
     private final MqttService mqttService;
     private final SensorWebSocketHandler webSocketHandler;
-    
+
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
         log.info("Received a new web socket connection");
-        
+
         // Note: This is handled in SensorWebSocketHandler.afterConnectionEstablished
         // But keeping this for potential future use
     }

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SensorData {
+
     private int mq2 = 0;
     private int fire = 0;
     private boolean relay1 = false;

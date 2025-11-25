@@ -17,35 +17,35 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Component
 @RequiredArgsConstructor
 public class SensorWebSocketHandler extends TextWebSocketHandler {
-    
+
     private final ObjectMapper objectMapper;
     private final CopyOnWriteArraySet<WebSocketSession> sessions = new CopyOnWriteArraySet<>();
-    
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
         log.info("🔌 New WebSocket client connected: {}", session.getId());
         log.info("📊 Total active connections: {}", sessions.size());
     }
-    
+
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
         log.info("🔌 WebSocket client disconnected: {}", session.getId());
         log.info("📊 Total active connections: {}", sessions.size());
     }
-    
+
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         // Handle incoming messages if needed
         log.debug("Received message from {}: {}", session.getId(), message.getPayload());
     }
-    
+
     public void broadcast(WebSocketMessage message) {
         try {
             String json = objectMapper.writeValueAsString(message);
             TextMessage textMessage = new TextMessage(json);
-            
+
             sessions.forEach(session -> {
                 if (session.isOpen()) {
                     try {
@@ -59,7 +59,7 @@ public class SensorWebSocketHandler extends TextWebSocketHandler {
             log.error("Error broadcasting message", e);
         }
     }
-    
+
     public void sendToSession(WebSocketSession session, WebSocketMessage message) {
         try {
             if (session.isOpen()) {
@@ -70,7 +70,7 @@ public class SensorWebSocketHandler extends TextWebSocketHandler {
             log.error("Error sending message to session {}", session.getId(), e);
         }
     }
-    
+
     public int getActiveConnectionCount() {
         return sessions.size();
     }
