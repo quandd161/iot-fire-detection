@@ -1,0 +1,126 @@
+.notifications-section {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  padding: 25px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.section-header h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.btn-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 0.85em;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-clear:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.notifications-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notifications-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.notifications-wrapper::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.notifications-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.3);
+  border-radius: 4px;
+}
+
+.notifications-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.5);
+}
+
+.no-notifications {
+  padding: 40px 20px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-light);
+}
+
+.empty-icon {
+  font-size: 4em;
+  opacity: 0.3;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.empty-state p {
+  font-size: 0.95em;
+  font-style: italic;
+}
+
+.notification-item {
+  background: rgba(0, 0, 0, 0.03);
+  padding: 15px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  border-left: 4px solid var(--danger);
+  animation: slideIn 0.3s ease;
+  transition: var(--transition);
+}
+
+.notification-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateX(5px);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification-item.warning {
+  border-left-color: var(--warning);
+}
+
+.notification-message {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+  font-size: 0.95em;
+}
+
+.notification-time {
+  font-size: 0.85em;
+  color: var(--text-light);
+}

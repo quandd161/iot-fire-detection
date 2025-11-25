@@ -1,0 +1,65 @@
+{
+  "groups": [
+    {
+      "name": "mqtt",
+      "type": "com.iot.gasdetection.config.MqttProperties",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties"
+    },
+    {
+      "name": "mqtt.broker",
+      "type": "com.iot.gasdetection.config.MqttProperties$Broker",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties",
+      "sourceMethod": "getBroker()"
+    },
+    {
+      "name": "mqtt.client",
+      "type": "com.iot.gasdetection.config.MqttProperties$Client",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties",
+      "sourceMethod": "getClient()"
+    },
+    {
+      "name": "mqtt.topics",
+      "type": "com.iot.gasdetection.config.MqttProperties$Topics",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties",
+      "sourceMethod": "getTopics()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "mqtt.broker.password",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Broker"
+    },
+    {
+      "name": "mqtt.broker.url",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Broker"
+    },
+    {
+      "name": "mqtt.broker.username",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Broker"
+    },
+    {
+      "name": "mqtt.client.id",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Client"
+    },
+    {
+      "name": "mqtt.topics.notification",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Topics"
+    },
+    {
+      "name": "mqtt.topics.sensor",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Topics"
+    },
+    {
+      "name": "mqtt.topics.status",
+      "type": "java.lang.String",
+      "sourceType": "com.iot.gasdetection.config.MqttProperties$Topics"
+    }
+  ],
+  "hints": []
+}
