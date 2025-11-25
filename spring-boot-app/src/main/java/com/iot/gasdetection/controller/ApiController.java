@@ -1,10 +1,9 @@
 package com.iot.gasdetection.controller;
 
-import com.iot.gasdetection.model.ApiResponse;
-import com.iot.gasdetection.model.SensorData;
-import com.iot.gasdetection.model.Notification;
+import com.iot.gasdetection.model.*;
 import com.iot.gasdetection.service.MqttService;
 import com.iot.gasdetection.service.WebSocketService;
+import com.iot.gasdetection.service.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +21,7 @@ public class ApiController {
 
     private final MqttService mqttService;
     private final WebSocketService webSocketService;
+    private final FcmService fcmService;
 
     // Get current sensor data
     @GetMapping("/data")
@@ -157,6 +157,104 @@ public class ApiController {
         health.put("mqtt", mqttService.getSensorData().isConnected());
         health.put("websocket", webSocketService.getActiveConnections());
         health.put("uptime", java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime() / 1000);
+        health.put("fcm_registered_devices", fcmService.getRegisteredTokens().size());
         return ApiResponse.success(health);
+    }
+
+    // ==================== FCM Endpoints ====================
+
+    /**
+     * Đăng ký FCM token từ mobile app
+     * POST /api/fcm/register
+     * Body: { "token": "device_fcm_token" }
+     */
+    @PostMapping("/fcm/register")
+    public ApiResponse<String> registerFcmToken(@RequestBody FcmTokenRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().isEmpty()) {
+                return ApiResponse.error("Token is required");
+            }
+            fcmService.registerToken(request.getToken());
+            log.info("📱 FCM token registered successfully");
+            return ApiResponse.success("Token registered successfully");
+        } catch (Exception e) {
+            log.error("Error registering FCM token", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Hủy đăng ký FCM token
+     * POST /api/fcm/unregister
+     * Body: { "token": "device_fcm_token" }
+     */
+    @PostMapping("/fcm/unregister")
+    public ApiResponse<String> unregisterFcmToken(@RequestBody FcmTokenRequest request) {
+        try {
+            if (request.getToken() == null || request.getToken().isEmpty()) {
+                return ApiResponse.error("Token is required");
+            }
+            fcmService.unregisterToken(request.getToken());
+            log.info("📱 FCM token unregistered successfully");
+            return ApiResponse.success("Token unregistered successfully");
+        } catch (Exception e) {
+            log.error("Error unregistering FCM token", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Test gửi notification (for testing purposes)
+     * POST /api/fcm/test
+     * Body: {
+     *   "title": "Test Title",
+     *   "body": "Test Message",
+     *   "token": "optional_specific_token",
+     *   "topic": "optional_topic",
+     *   "data": { "key": "value" }
+     * }
+     */
+    @PostMapping("/fcm/test")
+    public ApiResponse<String> sendTestNotification(@RequestBody FcmNotificationRequest request) {
+        try {
+            if (request.getTitle() == null || request.getBody() == null) {
+                return ApiResponse.error("Title and body are required");
+            }
+
+            String result;
+            if (request.getToken() != null && !request.getToken().isEmpty()) {
+                // Gửi đến device cụ thể
+                result = fcmService.sendToDevice(request.getToken(), request.getTitle(), 
+                        request.getBody(), request.getData());
+            } else if (request.getTopic() != null && !request.getTopic().isEmpty()) {
+                // Gửi đến topic
+                result = fcmService.sendToTopic(request.getTopic(), request.getTitle(), 
+                        request.getBody(), request.getData());
+            } else {
+                // Gửi đến tất cả devices đã đăng ký
+                fcmService.sendToAllDevices(request.getTitle(), request.getBody(), request.getData());
+                result = "Sent to all registered devices";
+            }
+
+            if (result != null) {
+                return ApiResponse.success(result);
+            } else {
+                return ApiResponse.error("Failed to send notification");
+            }
+        } catch (Exception e) {
+            log.error("Error sending test notification", e);
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy số lượng devices đã đăng ký
+     * GET /api/fcm/devices/count
+     */
+    @GetMapping("/fcm/devices/count")
+    public ApiResponse<Map<String, Integer>> getRegisteredDevicesCount() {
+        Map<String, Integer> response = new HashMap<>();
+        response.put("count", fcmService.getRegisteredTokens().size());
+        return ApiResponse.success(response);
     }
 }

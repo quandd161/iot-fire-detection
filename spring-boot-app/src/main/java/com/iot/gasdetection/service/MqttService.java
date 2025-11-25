@@ -25,6 +25,7 @@ public class MqttService {
     private final MqttProperties mqttProperties;
     private final WebSocketService webSocketService;
     private final ObjectMapper objectMapper;
+    private final FcmService fcmService;
 
     private MqttClient mqttClient;
     private final SensorData sensorData = new SensorData();
@@ -146,13 +147,62 @@ public class MqttService {
                 notifications.subList(MAX_NOTIFICATIONS, notifications.size()).clear();
             }
 
-            // Broadcast notification
+            // Broadcast notification to WebSocket
             WebSocketMessage wsMessage = new WebSocketMessage("notification", notification);
             webSocketService.broadcast(wsMessage);
+
+            // 🔥 Send FCM push notification for critical alerts
+            sendFcmNotificationIfCritical(notification);
 
         } catch (Exception e) {
             log.error("Error parsing notification", e);
         }
+    }
+
+    /**
+     * Gửi FCM push notification nếu là cảnh báo nghiêm trọng
+     */
+    private void sendFcmNotificationIfCritical(Notification notification) {
+        try {
+            String message = notification.getMessage();
+            String level = notification.getLevel() != null ? notification.getLevel() : "info";
+
+            // Chỉ gửi FCM cho các cảnh báo CRITICAL hoặc WARNING
+            if ("critical".equalsIgnoreCase(level) || "warning".equalsIgnoreCase(level)) {
+                
+                // Phát hiện loại cảnh báo
+                if (message.contains("Phát hiện cháy") || message.contains("fire") || message.contains("lửa")) {
+                    // Fire alert
+                    String sensorValue = extractSensorValue(message);
+                    fcmService.sendFireAlert(message, sensorValue);
+                    log.info("🔥 FCM Fire Alert sent: {}", message);
+                    
+                } else if (message.contains("Phát hiện khí gas") || message.contains("gas") || message.contains("MQ2")) {
+                    // Gas alert
+                    String sensorValue = extractSensorValue(message);
+                    fcmService.sendGasAlert(message, sensorValue);
+                    log.info("⚠️ FCM Gas Alert sent: {}", message);
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Error sending FCM notification", e);
+        }
+    }
+
+    /**
+     * Trích xuất giá trị cảm biến từ message (nếu có)
+     */
+    private String extractSensorValue(String message) {
+        try {
+            // Tìm số trong message (e.g., "MQ2: 850")
+            String[] parts = message.split(":");
+            if (parts.length > 1) {
+                return parts[1].trim().split(" ")[0];
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return "N/A";
     }
 
     public void publish(String topic, String message) {
