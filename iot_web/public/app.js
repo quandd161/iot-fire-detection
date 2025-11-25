@@ -13,6 +13,7 @@ let currentData = {
     relay1: false,
     relay2: false,
     window: false,
+    buzzer: false,
     mode: 'AUTO',
     threshold: 4000,
     connected: false
@@ -25,6 +26,14 @@ let chartData = {
     thresholdValues: [],
     maxPoints: 30 // 30 data points
 };
+
+// Chart update control
+let lastChartUpdate = 0;
+const CHART_UPDATE_INTERVAL = 10000; // Update chart every 10 seconds
+
+// All data for statistics (keep last 30 minutes of data)
+let allDataPoints = [];
+const MAX_DATA_POINTS = 180; // 30 minutes * 6 updates/min = 180 points
 
 // Statistics
 let stats = {
@@ -41,17 +50,19 @@ let gasChart = null;
 const elements = {
     statusIndicator: document.getElementById('statusIndicator'),
     statusText: document.getElementById('statusText'),
-    gasValue: document.getElementById('gasValue').querySelector('.value'),
+    gasValue: document.getElementById('gasValue'),
     gasStatus: document.getElementById('gasStatus'),
-    fireValue: document.getElementById('fireValue').querySelector('.value'),
+    fireValue: document.getElementById('fireValue'),
     fireStatus: document.getElementById('fireStatus'),
-    thresholdValue: document.getElementById('thresholdValue').querySelector('.value'),
+    thresholdDisplay: document.getElementById('thresholdDisplay'),
+    thresholdValue: document.getElementById('thresholdValue'),
     thresholdSlider: document.getElementById('thresholdSlider'),
     setThresholdBtn: document.getElementById('setThresholdBtn'),
     modeBtn: document.getElementById('modeBtn'),
     relay1Btn: document.getElementById('relay1Btn'),
     relay2Btn: document.getElementById('relay2Btn'),
     windowBtn: document.getElementById('windowBtn'),
+    buzzerBtn: document.getElementById('buzzerBtn'),
     notificationsList: document.getElementById('notificationsList'),
     lastUpdate: document.getElementById('lastUpdate'),
     avgValue: document.getElementById('avgValue'),
@@ -157,6 +168,10 @@ async function controlWindow(state) {
     await apiRequest('/api/control/window', 'POST', { state });
 }
 
+async function controlBuzzer(state) {
+    await apiRequest('/api/control/buzzer', 'POST', { state });
+}
+
 async function changeMode(mode) {
     await apiRequest('/api/control/mode', 'POST', { mode });
 }
@@ -183,72 +198,111 @@ function updateConnectionStatus(connected) {
 
 function updateUI() {
     // Update gas sensor
-    elements.gasValue.textContent = currentData.mq2;
+    if (elements.gasValue) {
+        elements.gasValue.textContent = currentData.mq2;
+    }
 
-    const gasCard = document.querySelector('.gas-card');
-    elements.gasStatus.className = 'sensor-status';
+    if (elements.gasStatus) {
+        elements.gasStatus.className = 'mini-status';
 
-    if (currentData.mq2 > currentData.threshold) {
-        elements.gasStatus.textContent = 'NGUY HIỂM!';
-        elements.gasStatus.classList.add('danger');
-        gasCard.style.borderLeft = '5px solid var(--danger-color)';
-    } else if (currentData.mq2 > currentData.threshold * 0.8) {
-        elements.gasStatus.textContent = 'Cảnh báo';
-        elements.gasStatus.classList.add('warning');
-        gasCard.style.borderLeft = '5px solid var(--warning-color)';
-    } else {
-        elements.gasStatus.textContent = 'Bình thường';
-        elements.gasStatus.classList.add('safe');
-        gasCard.style.borderLeft = '5px solid var(--primary-color)';
+        if (currentData.mq2 > currentData.threshold) {
+            elements.gasStatus.textContent = 'Nguy hiểm';
+            elements.gasStatus.classList.add('danger');
+        } else if (currentData.mq2 > currentData.threshold * 0.8) {
+            elements.gasStatus.textContent = 'Cảnh báo';
+            elements.gasStatus.classList.add('warning');
+        } else {
+            elements.gasStatus.textContent = 'An toàn';
+            elements.gasStatus.classList.add('safe');
+        }
     }
 
     // Update fire sensor
-    const fireCard = document.querySelector('.fire-card');
-    elements.fireStatus.className = 'sensor-status';
+    if (elements.fireValue && elements.fireStatus) {
+        elements.fireStatus.className = 'mini-status';
 
-    if (currentData.fire === 0) {
-        elements.fireValue.textContent = 'PHÁT HIỆN LỬA!';
-        elements.fireStatus.textContent = 'NGUY HIỂM!';
-        elements.fireStatus.classList.add('danger');
-        fireCard.style.borderLeft = '5px solid var(--danger-color)';
-    } else {
-        elements.fireValue.textContent = 'Bình thường';
-        elements.fireStatus.textContent = 'An toàn';
-        elements.fireStatus.classList.add('safe');
-        fireCard.style.borderLeft = '5px solid var(--primary-color)';
+        if (currentData.fire === 0) {
+            elements.fireValue.textContent = 'CHÁY!';
+            elements.fireStatus.textContent = 'Nguy hiểm';
+            elements.fireStatus.classList.add('danger');
+        } else {
+            elements.fireValue.textContent = 'OK';
+            elements.fireStatus.textContent = 'An toàn';
+            elements.fireStatus.classList.add('safe');
+        }
     }
 
-    // Update threshold
-    elements.thresholdValue.textContent = currentData.threshold;
-    elements.thresholdSlider.value = currentData.threshold;
+    // Update threshold (only if not currently being dragged)
+    const isDragging = elements.thresholdSlider && elements.thresholdSlider.dataset.dragging === 'true';
+
+    if (!isDragging) {
+        if (elements.thresholdDisplay) {
+            elements.thresholdDisplay.textContent = currentData.threshold;
+        }
+        if (elements.thresholdValue) {
+            elements.thresholdValue.textContent = currentData.threshold + ' ppm';
+        }
+        if (elements.thresholdSlider) {
+            elements.thresholdSlider.value = currentData.threshold;
+        }
+    }
 
     // Update mode
-    elements.modeBtn.className = `mode-btn ${currentData.mode.toLowerCase()}`;
-    elements.modeBtn.querySelector('.mode-text').textContent = currentData.mode;
+    if (elements.modeBtn) {
+        elements.modeBtn.className = `mode-btn compact ${currentData.mode.toLowerCase()}`;
+        const modeText = elements.modeBtn.querySelector('.mode-text');
+        if (modeText) {
+            modeText.textContent = currentData.mode;
+        }
+    }
 
-    // Update relay 1
-    updateControlButton(elements.relay1Btn, currentData.relay1, 'ON', 'OFF');
+    // Update relay 1 (Quạt) - Show action to take (if OFF, show BẬT button)
+    updateControlButton(elements.relay1Btn, currentData.relay1, 'TẮT', 'BẬT');
 
-    // Update relay 2
-    updateControlButton(elements.relay2Btn, currentData.relay2, 'ON', 'OFF');
+    // Update relay 2 (Máy bơm) - Show action to take (if OFF, show BẬT button)
+    updateControlButton(elements.relay2Btn, currentData.relay2, 'TẮT', 'BẬT');
 
-    // Update window
-    updateControlButton(elements.windowBtn, currentData.window, 'MỞ', 'ĐÓNG');
+    // Update window - Show action to take (if CLOSED, show MỞ button)
+    updateControlButton(elements.windowBtn, currentData.window, 'ĐÓNG', 'MỞ');
 
-    // Update chart and statistics
-    updateChartData();
+    // Update buzzer - Show action to take (if OFF, show BẬT button)
+    updateControlButton(elements.buzzerBtn, currentData.buzzer, 'TẮT', 'BẬT');
+
+    // Always add data point for statistics calculation
+    allDataPoints.push({
+        mq2: currentData.mq2,
+        threshold: currentData.threshold,
+        timestamp: Date.now()
+    });
+
+    // Keep only last MAX_DATA_POINTS
+    if (allDataPoints.length > MAX_DATA_POINTS) {
+        allDataPoints.shift();
+    }
+
+    // Update chart and statistics - only add chart point every 10 seconds
+    const now = Date.now();
+    if (now - lastChartUpdate >= CHART_UPDATE_INTERVAL) {
+        updateChartData();
+        lastChartUpdate = now;
+    }
+
+    // Always update statistics (based on all data points)
     updateStatistics();
 
     // Update last update time
-    if (currentData.lastUpdate) {
+    if (currentData.lastUpdate && elements.lastUpdate) {
         const date = new Date(currentData.lastUpdate);
         elements.lastUpdate.textContent = date.toLocaleString('vi-VN');
     }
-}
-
-function updateControlButton(button, state, onText, offText) {
-    button.setAttribute('data-state', state ? 'on' : 'off');
-    button.querySelector('.btn-text').textContent = state ? onText : offText;
+} function updateControlButton(button, state, onText, offText) {
+    // When device is ON, show OFF button (red) - user can click to turn OFF
+    // When device is OFF, show ON button (green) - user can click to turn ON
+    button.setAttribute('data-state', state ? 'off' : 'on');
+    const textElement = button.querySelector('.toggle-text') || button.querySelector('.btn-text');
+    if (textElement) {
+        textElement.textContent = state ? onText : offText;
+    }
 }
 
 function addNotification(notification, animate = true) {
@@ -290,9 +344,36 @@ function addNotification(notification, animate = true) {
 // Event Listeners
 // ============================================================================
 
-// Threshold slider
+// Threshold slider - mark as dragging when user interacts
+elements.thresholdSlider.addEventListener('mousedown', () => {
+    elements.thresholdSlider.dataset.dragging = 'true';
+});
+
+elements.thresholdSlider.addEventListener('touchstart', () => {
+    elements.thresholdSlider.dataset.dragging = 'true';
+});
+
+elements.thresholdSlider.addEventListener('mouseup', () => {
+    setTimeout(() => delete elements.thresholdSlider.dataset.dragging, 100);
+});
+
+elements.thresholdSlider.addEventListener('touchend', () => {
+    setTimeout(() => delete elements.thresholdSlider.dataset.dragging, 100);
+});
+
+// Also remove dragging flag when slider loses focus or user stops interacting
+elements.thresholdSlider.addEventListener('blur', () => {
+    setTimeout(() => delete elements.thresholdSlider.dataset.dragging, 100);
+});
+
 elements.thresholdSlider.addEventListener('input', (e) => {
-    elements.thresholdValue.textContent = e.target.value;
+    const val = e.target.value;
+    if (elements.thresholdValue) {
+        elements.thresholdValue.textContent = val + ' ppm';
+    }
+    if (elements.thresholdDisplay) {
+        elements.thresholdDisplay.textContent = val;
+    }
 });
 
 // Set threshold button
@@ -343,6 +424,15 @@ elements.windowBtn.addEventListener('click', async () => {
     }
 });
 
+// Buzzer button
+elements.buzzerBtn.addEventListener('click', async () => {
+    try {
+        await controlBuzzer(!currentData.buzzer);
+    } catch (error) {
+        console.error('Error controlling buzzer:', error);
+    }
+});
+
 // ============================================================================
 // Chart Functions
 // ============================================================================
@@ -359,21 +449,27 @@ function initChart() {
                 {
                     label: 'MQ2 (ppm)',
                     data: chartData.mq2Values,
-                    borderColor: '#4CAF50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                    borderWidth: 2,
+                    borderColor: '#0EA5E9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+                    borderWidth: 3,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: '#0EA5E9',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 },
                 {
                     label: 'Ngưỡng',
                     data: chartData.thresholdValues,
-                    borderColor: '#FF9800',
-                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                    borderColor: '#F97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
                     borderWidth: 2,
-                    borderDash: [5, 5],
+                    borderDash: [8, 4],
                     tension: 0,
-                    fill: false
+                    fill: false,
+                    pointRadius: 0
                 }
             ]
         },
@@ -386,7 +482,14 @@ function initChart() {
                 },
                 tooltip: {
                     mode: 'index',
-                    intersect: false
+                    intersect: false,
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#F0F9FF',
+                    bodyColor: '#F0F9FF',
+                    borderColor: '#0EA5E9',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8
                 }
             },
             scales: {
@@ -394,15 +497,51 @@ function initChart() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Nồng độ (ppm)'
+                        text: 'Nồng độ (ppm)',
+                        font: {
+                            size: 13,
+                            weight: '600'
+                        },
+                        color: '#64748B'
+                    },
+                    grid: {
+                        color: 'rgba(100, 116, 139, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 11
+                        }
                     }
                 },
                 x: {
                     title: {
                         display: true,
-                        text: 'Thời gian'
+                        text: 'Thời gian',
+                        font: {
+                            size: 13,
+                            weight: '600'
+                        },
+                        color: '#64748B'
+                    },
+                    grid: {
+                        color: 'rgba(100, 116, 139, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 11
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
                     }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
@@ -434,18 +573,37 @@ function updateChartData() {
 }
 
 function updateStatistics() {
-    if (chartData.mq2Values.length === 0) return;
+    console.log('📊 Updating statistics, total data points:', allDataPoints.length, 'chart points:', chartData.mq2Values.length);
+
+    // Use all data points for accurate statistics
+    const dataSource = allDataPoints.length > 0 ? allDataPoints : [];
+
+    if (dataSource.length === 0) {
+        // If no data yet, show current value
+        const currentValue = currentData.mq2 || 0;
+        console.log('No historical data, using current value:', currentValue);
+        if (elements.avgValue) elements.avgValue.textContent = currentValue;
+        if (elements.maxValue) elements.maxValue.textContent = currentValue;
+        if (elements.minValue) elements.minValue.textContent = currentValue;
+        if (elements.alertCount) elements.alertCount.textContent = 0;
+        return;
+    }
+
+    // Extract MQ2 values from data points
+    const mq2Values = dataSource.map(point => point.mq2);
 
     // Calculate average
-    const sum = chartData.mq2Values.reduce((a, b) => a + b, 0);
-    stats.avg = Math.round(sum / chartData.mq2Values.length);
+    const sum = mq2Values.reduce((a, b) => a + b, 0);
+    stats.avg = Math.round(sum / mq2Values.length);
 
     // Calculate max and min
-    stats.max = Math.max(...chartData.mq2Values);
-    stats.min = Math.min(...chartData.mq2Values);
+    stats.max = Math.max(...mq2Values);
+    stats.min = Math.min(...mq2Values);
 
     // Count alerts
-    stats.alertCount = chartData.mq2Values.filter(val => val > currentData.threshold).length;
+    stats.alertCount = dataSource.filter(point => point.mq2 > point.threshold).length;
+
+    console.log('Stats calculated:', { avg: stats.avg, max: stats.max, min: stats.min, alerts: stats.alertCount });
 
     // Update UI
     if (elements.avgValue) elements.avgValue.textContent = stats.avg;

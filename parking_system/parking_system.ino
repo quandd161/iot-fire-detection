@@ -85,11 +85,13 @@ bool tryCbWIFI = MODE_NOWIFI;
 #define TOPIC_RELAY1 "gas/status/relay1"
 #define TOPIC_RELAY2 "gas/status/relay2"
 #define TOPIC_WINDOW "gas/status/window"
+#define TOPIC_BUZZER "gas/status/buzzer"
 #define TOPIC_MODE "gas/status/mode"
 #define TOPIC_THRESHOLD "gas/status/threshold"
 #define TOPIC_CTRL_RELAY1 "gas/control/relay1"
 #define TOPIC_CTRL_RELAY2 "gas/control/relay2"
 #define TOPIC_CTRL_WINDOW "gas/control/window"
+#define TOPIC_CTRL_BUZZER "gas/control/buzzer"
 #define TOPIC_CTRL_MODE "gas/control/mode"
 #define TOPIC_CTRL_THRESHOLD "gas/control/threshold"
 #define TOPIC_NOTIFICATION "gas/notification"
@@ -122,6 +124,12 @@ void controlWindow(int onoff);
 //-------------------- Khai báo biến freeRTOS ----------------------------
 TaskHandle_t TaskMainDisplay_handle = NULL;
 TaskHandle_t TaskButton_handle = NULL;
+
+//-------------------- Khai báo biến toàn cục ----------------------------
+int checkSensor = 0;
+int buzzerON = 0;
+int buzzerManualState = 0; // Manual control state for buzzer
+int sendNotificationsOnce = 0;
 
 void setup()
 {
@@ -523,6 +531,17 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     EEPROM.commit();
     printMode();
   }
+  else if (String(topic) == TOPIC_CTRL_BUZZER)
+  {
+    buzzerManualState = (message == "1" || message == "ON") ? 1 : 0;
+    buzzerON = buzzerManualState;
+    Serial.print("Buzzer manual control: ");
+    Serial.println(buzzerManualState ? "ON" : "OFF");
+    autoManual = MANUAL;
+    EEPROM.write(201, MANUAL);
+    EEPROM.commit();
+    printMode();
+  }
   else if (String(topic) == TOPIC_CTRL_MODE)
   {
     autoManual = (message == "1" || message == "AUTO") ? AUTO : MANUAL;
@@ -572,6 +591,7 @@ void connectMQTT()
       mqttClient.subscribe(TOPIC_CTRL_RELAY1);
       mqttClient.subscribe(TOPIC_CTRL_RELAY2);
       mqttClient.subscribe(TOPIC_CTRL_WINDOW);
+      mqttClient.subscribe(TOPIC_CTRL_BUZZER);
       mqttClient.subscribe(TOPIC_CTRL_MODE);
       mqttClient.subscribe(TOPIC_CTRL_THRESHOLD);
 
@@ -606,6 +626,7 @@ void publishMQTT()
     mqttClient.publish(TOPIC_RELAY1, relay1State ? "1" : "0", true);
     mqttClient.publish(TOPIC_RELAY2, relay2State ? "1" : "0", true);
     mqttClient.publish(TOPIC_WINDOW, windowState ? "1" : "0", true);
+    mqttClient.publish(TOPIC_BUZZER, buzzerON ? "1" : "0", true);
     mqttClient.publish(TOPIC_MODE, autoManual ? "1" : "0", true);
     mqttClient.publish(TOPIC_THRESHOLD, String(mq2Thresshold).c_str(), true);
   }
@@ -771,9 +792,6 @@ void printWindowState(int windowState)
 }
 
 //-----------------------Task Main Display and Control Device----------
-int checkSensor = 0;
-int buzzerON = 0;
-int sendNotificationsOnce = 0;
 void TaskMainDisplay(void *pvParameters)
 {
   //----------- Khởi tạo LCD ------------------
@@ -845,7 +863,7 @@ void TaskMainDisplay(void *pvParameters)
     if (readMQ2() > mq2Thresshold && readFireSensor() == SENSOR_FIRE_ON)
     {
       if (sendNotificationsOnce == 0)
-        sendNotificationMQTT("DANGER: Fire & Gas detected!");
+        sendNotificationMQTT("NGUY HIỂM: Phát hiện lửa và khí gas!");
       sendNotificationsOnce = 1;
       My_LCD.clear();
       LCDPrint(0, 4, "WARNING", 0);
@@ -861,7 +879,7 @@ void TaskMainDisplay(void *pvParameters)
     else if (readMQ2() > mq2Thresshold && readFireSensor() == SENSOR_FIRE_OFF)
     {
       if (sendNotificationsOnce == 0)
-        sendNotificationMQTT("WARNING: Gas exceeds permissible limits");
+        sendNotificationMQTT("CẢNH BÁO: Nồng độ khí gas vượt ngưỡng cho phép!");
       sendNotificationsOnce = 1;
       Serial.println("WARNING Gas exceeds permissible limits");
       My_LCD.clear();
@@ -873,7 +891,7 @@ void TaskMainDisplay(void *pvParameters)
     else if (readMQ2() < mq2Thresshold - 100 && readFireSensor() == SENSOR_FIRE_ON)
     {
       if (sendNotificationsOnce == 0)
-        sendNotificationMQTT("DANGER: Fire detected!");
+        sendNotificationMQTT("NGUY HIỂM: Phát hiện lửa!");
       sendNotificationsOnce = 1;
       My_LCD.clear();
       delay(500);
