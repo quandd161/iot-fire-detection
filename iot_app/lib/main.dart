@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/sensor_provider.dart';
 import 'screens/dashboard_screen.dart';
+import 'theme/app_theme.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'services/fcm_service.dart';
@@ -38,17 +39,8 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Gas Detection System',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF10B981),
-            primary: const Color(0xFF10B981),
-            secondary: const Color(0xFF3B82F6),
-            error: const Color(0xFFEF4444),
-            surface: const Color(0xFFF8FAFC),
-          ),
-          useMaterial3: true,
+        theme: AppTheme.lightTheme.copyWith(
           textTheme: GoogleFonts.interTextTheme(),
-          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         ),
         home: const DashboardScreen(),
       ),

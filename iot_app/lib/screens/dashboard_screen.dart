@@ -3,20 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/sensor_provider.dart';
+import '../theme/app_theme.dart';
+import '../widgets/professional_widgets.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          ),
+          gradient: AppTheme.modernGradient,
         ),
         child: SafeArea(
           child: Consumer<SensorProvider>(
@@ -27,22 +34,26 @@ class DashboardScreen extends StatelessWidget {
                   // In a real app we might expose a refresh method
                 },
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppTheme.spaceMedium),
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildHeader(provider),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLarge),
                       _buildSensorPanel(context, provider),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLarge),
                       _buildControlPanel(context, provider),
-                      const SizedBox(height: 20),
-                      _buildChartPanel(context, provider),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLarge),
+                      // Wrap chart in RepaintBoundary at higher level
+                      RepaintBoundary(
+                        child: _buildChartPanel(context, provider),
+                      ),
+                      const SizedBox(height: AppTheme.spaceLarge),
                       _buildStatsPanel(context, provider),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLarge),
                       _buildNotificationsPanel(context, provider),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppTheme.spaceLarge),
                       _buildFooter(provider),
                     ],
                   ),
@@ -56,73 +67,13 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(SensorProvider provider) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '🔥 Gas Detection System',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.black12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: provider.data.connected
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFEF4444),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (provider.data.connected
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFEF4444))
-                            .withOpacity(0.5),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  provider.data.connected ? 'Đã kết nối' : 'Mất kết nối',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return SectionHeader(
+      title: '🔥 Gas Detection System',
+      icon: Icons.whatshot,
+      trailing: StatusBadge(
+        label: provider.data.connected ? 'Đã kết nối' : 'Mất kết nối',
+        color: provider.data.connected ? AppTheme.successGreen : AppTheme.dangerRed,
+        icon: provider.data.connected ? Icons.check_circle : Icons.error,
       ),
     );
   }
@@ -130,26 +81,23 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildSensorPanel(BuildContext context, SensorProvider provider) {
     return Column(
       children: [
-        _buildSensorCard(
+        MetricCard(
           title: 'Nồng độ Gas (MQ2)',
-          icon: '💨',
           value: '${provider.data.mq2}',
           unit: 'ppm',
-          status: _getGasStatus(provider.data.mq2, provider.data.threshold),
-          statusColor: _getGasColor(provider.data.mq2, provider.data.threshold),
+          subtitle: _getGasStatus(provider.data.mq2, provider.data.threshold),
+          icon: Icons.cloud,
+          color: _getGasColor(provider.data.mq2, provider.data.threshold),
         ),
-        const SizedBox(height: 16),
-        _buildSensorCard(
+        const SizedBox(height: AppTheme.spaceMedium),
+        MetricCard(
           title: 'Cảm biến lửa',
-          icon: '🔥',
           value: provider.data.fire == 0 ? 'PHÁT HIỆN LỬA!' : 'Bình thường',
-          unit: '',
-          status: provider.data.fire == 0 ? 'NGUY HIỂM!' : 'An toàn',
-          statusColor: provider.data.fire == 0
-              ? const Color(0xFFEF4444)
-              : const Color(0xFF10B981),
+          subtitle: provider.data.fire == 0 ? 'NGUY HIỂM!' : 'An toàn',
+          icon: Icons.local_fire_department,
+          color: provider.data.fire == 0 ? AppTheme.dangerRed : AppTheme.successGreen,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppTheme.spaceMedium),
         _buildThresholdCard(context, provider),
       ],
     );
@@ -164,33 +112,21 @@ class DashboardScreen extends StatelessWidget {
     required Color statusColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: statusColor, width: 5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+      padding: const EdgeInsets.all(AppTheme.spaceLarge),
+      decoration: AppTheme.cardDecoration().copyWith(
+        border: Border(left: BorderSide(color: statusColor, width: 4)),
       ),
       child: Column(
         children: [
           Text(icon, style: const TextStyle(fontSize: 40)),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppTheme.spaceMedium),
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+            style: AppTheme.labelMedium.copyWith(
               letterSpacing: 1,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppTheme.spaceMedium),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -375,56 +311,37 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildControlPanel(BuildContext context, SensorProvider provider) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(AppTheme.spaceMedium),
+      decoration: AppTheme.cardDecoration(),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
-              Text('🎛️', style: TextStyle(fontSize: 24)),
-              SizedBox(width: 10),
-              Text(
-                'Bảng điều khiển',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
+          const SectionHeader(
+            title: 'Bảng điều khiển',
+            icon: Icons.tune,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppTheme.spaceMedium),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Chế độ hoạt động:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTheme.headingSmall,
               ),
               GestureDetector(
                 onTap: provider.isLoading('mode') ? null : () => provider.toggleMode(),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: provider.data.mode == 'AUTO'
-                        ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF34D399)])
-                        : const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)]),
+                        ? AppTheme.successGradient
+                        : AppTheme.warningGradient,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
                         color: (provider.data.mode == 'AUTO'
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFFF59E0B))
+                                ? AppTheme.successGreen
+                                : AppTheme.warningOrange)
                             .withOpacity(0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
@@ -442,53 +359,53 @@ class DashboardScreen extends StatelessWidget {
                         )
                       : Text(
                           provider.data.mode,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          style: AppTheme.labelMedium.copyWith(color: Colors.white),
                         ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppTheme.spaceMedium),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.2,
+            mainAxisSpacing: AppTheme.spaceSmall,
+            crossAxisSpacing: AppTheme.spaceSmall,
+            childAspectRatio: 1.1, // Adjusted for ControlCard
             children: [
-              _buildControlBtn(
-                'Relay 1',
-                '🔌',
-                provider.data.relay1,
-                () => provider.toggleRelay1(),
+              ControlCard(
+                title: 'Relay 1',
+                value: provider.data.relay1,
+                icon: Icons.power,
+                activeColor: AppTheme.successGreen,
+                onTap: provider.isLoading('relay1') ? null : provider.toggleRelay1,
                 isLoading: provider.isLoading('relay1'),
               ),
-              _buildControlBtn(
-                'Relay 2',
-                '🔌',
-                provider.data.relay2,
-                () => provider.toggleRelay2(),
+              ControlCard(
+                title: 'Relay 2',
+                value: provider.data.relay2,
+                icon: Icons.power,
+                activeColor: AppTheme.successGreen,
+                onTap: provider.isLoading('relay2') ? null : provider.toggleRelay2,
                 isLoading: provider.isLoading('relay2'),
               ),
-              _buildControlBtn(
-                'Cửa sổ',
-                '🪟',
-                provider.data.window,
-                () => provider.toggleWindow(),
+              ControlCard(
+                title: 'Cửa sổ',
+                value: provider.data.window,
+                icon: Icons.window,
+                activeColor: AppTheme.successGreen,
+                onTap: provider.isLoading('window') ? null : provider.toggleWindow,
+                isLoading: provider.isLoading('window'),
                 onLabel: 'MỞ',
                 offLabel: 'ĐÓNG',
-                isLoading: provider.isLoading('window'),
               ),
-              _buildControlBtn(
-                'Còi báo',
-                '🔊',
-                provider.data.buzzer,
-                () => provider.toggleBuzzer(),
+              ControlCard(
+                title: 'Còi báo',
+                value: provider.data.buzzer,
+                icon: Icons.notifications_active,
+                activeColor: AppTheme.successGreen,
+                onTap: provider.isLoading('buzzer') ? null : provider.toggleBuzzer,
                 isLoading: provider.isLoading('buzzer'),
               ),
             ],
@@ -510,7 +427,7 @@ class DashboardScreen extends StatelessWidget {
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -536,21 +453,25 @@ class DashboardScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(icon, style: const TextStyle(fontSize: 24)),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1E293B),
+                Text(icon, style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 gradient: state
                     ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF34D399)])
@@ -566,12 +487,14 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
               child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ? const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
                       ),
                     )
                   : Text(
@@ -580,8 +503,8 @@ class DashboardScreen extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        letterSpacing: 1,
+                        fontSize: 14,
+                        letterSpacing: 0.5,
                       ),
                     ),
             ),
@@ -675,9 +598,12 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildStatsPanel(BuildContext context, SensorProvider provider) {
     if (provider.mq2History.isEmpty) return const SizedBox.shrink();
 
-    final avg = (provider.mq2History.reduce((a, b) => a + b) / provider.mq2History.length).round();
-    final max = provider.mq2History.reduce((a, b) => a > b ? a : b).round();
-    final min = provider.mq2History.reduce((a, b) => a < b ? a : b).round();
+    // Cache calculations to avoid recomputing on every rebuild
+    final history = provider.mq2History;
+    final sum = history.reduce((a, b) => a + b);
+    final avg = (sum / history.length).round();
+    final max = history.reduce((a, b) => a > b ? a : b).round();
+    final min = history.reduce((a, b) => a < b ? a : b).round();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -754,68 +680,52 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildNotificationsPanel(BuildContext context, SensorProvider provider) {
+    // Limit to 3 most recent notifications to prevent overload
+    final maxNotifications = 15;
+    final displayNotifications = provider.notifications.length > maxNotifications
+        ? provider.notifications.take(maxNotifications).toList()
+        : provider.notifications;
+
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(AppTheme.spaceMedium),
+      decoration: AppTheme.cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
-              Text('🔔', style: TextStyle(fontSize: 24)),
-              SizedBox(width: 10),
-              Text(
-                'Thông báo',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-            ],
+          SectionHeader(
+            title: 'Thông báo',
+            icon: Icons.notifications,
+            trailing: provider.notifications.length > maxNotifications
+                ? StatusBadge(
+                    label: '+${provider.notifications.length - maxNotifications} khác',
+                    color: AppTheme.infoBlue,
+                  )
+                : null,
           ),
-          const SizedBox(height: 20),
-          if (provider.notifications.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text(
-                  'Chưa có thông báo nào',
-                  style: TextStyle(color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
-                ),
-              ),
-            )
+          const SizedBox(height: AppTheme.spaceMedium),
+          if (displayNotifications.isEmpty)
+            const EmptyState(message: 'Chưa có thông báo nào')
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: provider.notifications.length > 5 ? 5 : provider.notifications.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemCount: displayNotifications.length,
+              separatorBuilder: (context, index) => const SizedBox(height: AppTheme.spaceSmall),
               itemBuilder: (context, index) {
-                final notif = provider.notifications[index];
+                final notif = displayNotifications[index];
                 final type = notif['type'] ?? 'info';
                 final message = notif['message'] ?? '';
                 final time = notif['receivedAt'] ?? notif['timestamp'];
-                
-                Color color = const Color(0xFF3B82F6);
-                if (type == 'danger') color = const Color(0xFFEF4444);
-                if (type == 'warning') color = const Color(0xFFF59E0B);
+
+                Color color = AppTheme.infoBlue;
+                if (type == 'danger') color = AppTheme.dangerRed;
+                if (type == 'warning') color = AppTheme.warningOrange;
 
                 return Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppTheme.spaceMedium),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppTheme.surfaceLight,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                     border: Border(left: BorderSide(color: color, width: 4)),
                     boxShadow: [
                       BoxShadow(
@@ -830,20 +740,13 @@ class DashboardScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           message,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1E293B),
-                          ),
+                          style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                       if (time != null)
                         Text(
                           _formatTime(time),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF94A3B8),
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTheme.bodySmall.copyWith(color: AppTheme.textTertiary),
                         ),
                     ],
                   ),
