@@ -4,7 +4,25 @@ import 'package:provider/provider.dart';
 import 'providers/sensor_provider.dart';
 import 'screens/dashboard_screen.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'services/fcm_service.dart';
+
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Initialize FCM
+    final fcmService = FcmService();
+    await fcmService.init();
+  } catch (e) {
+    print('Firebase initialization failed: $e');
+  }
+  
   runApp(const MyApp());
 }
 

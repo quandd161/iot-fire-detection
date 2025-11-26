@@ -5,15 +5,27 @@ class WebSocketService {
   WebSocketChannel? _channel;
 
   Stream<dynamic> connect() {
+    print(
+      '🔌 WebSocketService: Attempting to connect to ${AppConstants.wsUrl}',
+    );
+
     try {
       _channel = WebSocketChannel.connect(Uri.parse(AppConstants.wsUrl));
-      return _channel!.stream;
+      print('✅ WebSocketService: Connection initiated');
+
+      // Wrap stream with error handling
+      return _channel!.stream.handleError((error) {
+        print('❌ WebSocketService Stream Error: $error');
+      });
     } catch (e) {
+      print('❌ WebSocketService Connect Error: $e');
+      print('🔧 Details: $e');
       return Stream.error(e);
     }
   }
 
   void disconnect() {
+    print('🔌 WebSocketService: Disconnecting');
     _channel?.sink.close();
   }
 }

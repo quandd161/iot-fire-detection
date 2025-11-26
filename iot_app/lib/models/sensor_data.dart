@@ -4,6 +4,7 @@ class SensorData {
   final bool relay1;
   final bool relay2;
   final bool window;
+  final bool buzzer;
   final String mode;
   final int threshold;
   final DateTime lastUpdate;
@@ -15,6 +16,7 @@ class SensorData {
     required this.relay1,
     required this.relay2,
     required this.window,
+    required this.buzzer,
     required this.mode,
     required this.threshold,
     required this.lastUpdate,
@@ -28,6 +30,7 @@ class SensorData {
       relay1: json['relay1'] ?? false,
       relay2: json['relay2'] ?? false,
       window: json['window'] ?? false,
+      buzzer: json['buzzer'] ?? false,
       mode: json['mode'] ?? 'AUTO',
       threshold: json['threshold'] ?? 4000,
       lastUpdate: json['lastUpdate'] != null
@@ -43,6 +46,7 @@ class SensorData {
     bool? relay1,
     bool? relay2,
     bool? window,
+    bool? buzzer,
     String? mode,
     int? threshold,
     DateTime? lastUpdate,
@@ -54,6 +58,7 @@ class SensorData {
       relay1: relay1 ?? this.relay1,
       relay2: relay2 ?? this.relay2,
       window: window ?? this.window,
+      buzzer: buzzer ?? this.buzzer,
       mode: mode ?? this.mode,
       threshold: threshold ?? this.threshold,
       lastUpdate: lastUpdate ?? this.lastUpdate,

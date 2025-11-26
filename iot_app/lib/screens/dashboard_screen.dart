@@ -484,6 +484,13 @@ class DashboardScreen extends StatelessWidget {
                 offLabel: 'ĐÓNG',
                 isLoading: provider.isLoading('window'),
               ),
+              _buildControlBtn(
+                'Còi báo',
+                '🔊',
+                provider.data.buzzer,
+                () => provider.toggleBuzzer(),
+                isLoading: provider.isLoading('buzzer'),
+              ),
             ],
           ),
         ],
@@ -623,7 +630,7 @@ class DashboardScreen extends StatelessWidget {
                 titlesData: FlTitlesData(show: false),
                 borderData: FlBorderData(show: false),
                 minX: 0,
-                maxX: 30,
+                maxX: 180,
                 minY: 0,
                 maxY: 10000,
                 lineBarsData: [
@@ -642,6 +649,19 @@ class DashboardScreen extends StatelessWidget {
                       show: true,
                       color: const Color(0xFF10B981).withOpacity(0.1),
                     ),
+                  ),
+                  LineChartBarData(
+                    spots: provider.thresholdHistory
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value.toDouble()))
+                        .toList(),
+                    isCurved: false,
+                    color: const Color(0xFFF97316),
+                    barWidth: 2,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: false),
+                    dashArray: [5, 5],
                   ),
                 ],
               ),
