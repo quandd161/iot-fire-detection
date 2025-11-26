@@ -1,0 +1,24 @@
+.footer {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  padding: 15px 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9em;
+  color: var(--text-light);
+}
+
+.footer-time {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}

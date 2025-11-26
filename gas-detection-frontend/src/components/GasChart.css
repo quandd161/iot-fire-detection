@@ -1,0 +1,51 @@
+.chart-section {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  padding: 25px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.section-header h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 350px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: var(--radius-sm);
+  padding: 15px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
